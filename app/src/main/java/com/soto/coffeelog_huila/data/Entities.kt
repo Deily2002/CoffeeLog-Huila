@@ -9,9 +9,11 @@ data class UsuarioEntity(
     val nombre: String,
     val correo: String,
     val password: String,
-    val telefono: String?,
+    val telefono: String? = null,
     val rol: RolUsuario,
-    val fotoPerfilPath: String? = null
+    val preguntaSeguridad: String? = null,
+    val respuestaSeguridad: String? = null,
+    val fotoPerfil: String? = null
 )
 
 // 2. FINCAS (Ubicación y altitud)

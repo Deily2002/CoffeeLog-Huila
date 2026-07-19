@@ -2,6 +2,8 @@ package com.soto.coffeelog_huila.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+val CoffeeDark = Color(0xFF3E2723)
+
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
 val Pink80 = Color(0xFFEFB8C8)
