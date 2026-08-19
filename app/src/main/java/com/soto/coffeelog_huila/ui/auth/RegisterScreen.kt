@@ -25,13 +25,25 @@ import androidx.compose.ui.unit.sp
 import com.soto.coffeelog_huila.R
 import com.soto.coffeelog_huila.ui.theme.BackgroundCrema
 import com.soto.coffeelog_huila.ui.theme.CoffeeDark
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.AsyncImage
 
 @Composable
 fun RegisterScreen(viewModel: AuthViewModel, onNavigateToRole: () -> Unit, onNavigateToLogin: () -> Unit) {
     var passwordVisible by remember { mutableStateOf(false) }
     var termsAccepted by remember { mutableStateOf(false) }
     var showError by remember { mutableStateOf(false) }
+    var showTermsDialog by remember { mutableStateOf(false) }
+    var showPrivacyDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        imageUri = uri
+    }
 
     // 1. BOX PRINCIPAL: Actúa como el lienzo base, SIN imePadding para no trabar el teclado
     Box(
@@ -75,23 +87,35 @@ fun RegisterScreen(viewModel: AuthViewModel, onNavigateToRole: () -> Unit, onNav
 
                 // FOTO DE PERFIL
                 Box(contentAlignment = Alignment.BottomEnd) {
+
                     Box(
                         modifier = Modifier
                             .size(110.dp)
                             .clip(CircleShape)
                             .background(Color(0xFFE0E0E0))
-                            .border(2.dp, Color.White, CircleShape),
+                            .border(2.dp, Color.White, CircleShape)
+                            .clickable { galleryLauncher.launch("image/*") }, // Al tocar el círculo, abre galería
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(painterResource(id = R.drawable.ic_camera), contentDescription = null, tint = Color.Gray, modifier = Modifier.size(40.dp))
+                        if (imageUri != null) {
+                            AsyncImage(
+                                model = imageUri,
+                                contentDescription = "Foto de perfil",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(painterResource(id = R.drawable.ic_camera), contentDescription = null, tint = Color.Gray, modifier = Modifier.size(40.dp))
+                        }
                     }
+
                     Box(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
                             .background(CoffeeDark)
                             .border(4.dp, Color(0xFFFDF8F5), CircleShape)
-                            .clickable { /* Abrir galería */ },
+                            .clickable { galleryLauncher.launch("image/*") }, // Al tocar el lápiz, abre galería
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(painterResource(id = R.drawable.ic_edit), contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
@@ -173,18 +197,39 @@ fun RegisterScreen(viewModel: AuthViewModel, onNavigateToRole: () -> Unit, onNav
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // TÉRMINOS Y CONDICIONES
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                ) {
                     Checkbox(
                         checked = termsAccepted,
                         onCheckedChange = { termsAccepted = it },
                         colors = CheckboxDefaults.colors(checkedColor = CoffeeDark)
                     )
-                    Text(
-                        text = "Acepto los Términos y Condiciones\ny la Política de Privacidad",
-                        fontSize = 14.sp,
-                        color = CoffeeDark,
-                        lineHeight = 16.sp
-                    )
+
+                    // Texto interactivo
+                    Column {
+                        Row {
+                            Text("Acepto los ", fontSize = 14.sp, color = Color.Gray)
+                            Text(
+                                text = "Términos y Condiciones",
+                                fontSize = 14.sp,
+                                color = CoffeeDark,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.clickable { showTermsDialog = true }
+                            )
+                        }
+                        Row {
+                            Text("y la ", fontSize = 14.sp, color = Color.Gray)
+                            Text(
+                                text = "Política de Privacidad",
+                                fontSize = 14.sp,
+                                color = CoffeeDark,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.clickable { showPrivacyDialog = true }
+                            )
+                        }
+                    }
                 }
 
                 if (showError) {
@@ -222,6 +267,7 @@ fun RegisterScreen(viewModel: AuthViewModel, onNavigateToRole: () -> Unit, onNav
                 Spacer(modifier = Modifier.height(5.dp))
             }
 
+
             // 3. DECORACIÓN INFERIOR
             Box(modifier = Modifier.fillMaxWidth().height(78.dp)) {
                 Image(
@@ -236,4 +282,52 @@ fun RegisterScreen(viewModel: AuthViewModel, onNavigateToRole: () -> Unit, onNav
             }
         }
     }
+    // LÓGICA PARA MOSTRAR LOS DIÁLOGOS
+    if (showTermsDialog) {
+        TermsDialog(onDismiss = { showTermsDialog = false })
+    }
+    if (showPrivacyDialog) {
+        PrivacyDialog(onDismiss = { showPrivacyDialog = false })
+    }
+}
+
+@Composable
+fun TermsDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Términos y Condiciones", fontWeight = FontWeight.Bold, color = CoffeeDark) },
+        text = {
+            Text(
+                "Bienvenido a CoffeeLog.\n\n" +
+                        "1. El uso de esta aplicación está destinado exclusivamente a la gestión de datos agronómicos.\n" +
+                        "2. Usted es el único responsable de la veracidad de la información ingresada en las Fichas Técnicas.\n" +
+                        "3. CoffeeLog no interviene en las transacciones comerciales ni define los precios de venta de su café.\n" +
+                        "4. La licencia de la versión PRO es intransferible y de uso anual."
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Entendido", color = CoffeeDark, fontWeight = FontWeight.Bold) }
+        },
+        containerColor = Color(0xFFFDF8F5) // Fondo crema
+    )
+}
+
+@Composable
+fun PrivacyDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Política de Privacidad (Habeas Data)", fontWeight = FontWeight.Bold, color = CoffeeDark) },
+        text = {
+            Text(
+                "En cumplimiento de la Ley 1581 de 2012 (Protección de Datos Personales en Colombia):\n\n" +
+                        "1. Sus datos personales (nombre, correo) y agronómicos serán almacenados localmente en su dispositivo.\n" +
+                        "2. Si adquiere la versión PRO, las copias de seguridad en la nube estarán encriptadas y no serán compartidas con terceros.\n" +
+                        "3. Usted tiene derecho a conocer, actualizar, rectificar y solicitar la eliminación de sus datos en cualquier momento."
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Entendido", color = CoffeeDark, fontWeight = FontWeight.Bold) }
+        },
+        containerColor = Color(0xFFFDF8F5)
+    )
 }
