@@ -25,4 +25,15 @@ interface CoffeeDao {
 
     @Query("SELECT * FROM cataciones WHERE loteId = :loteId ORDER BY fecha DESC")
     fun obtenerCatacionesPorLote(loteId: Long): Flow<List<CatacionEntity>>
+
+    // FINCAS: Para el dashboard del Productor
+    @Insert
+    suspend fun insertarFinca(finca: FincaEntity)
+
+    @Query("SELECT * FROM fincas WHERE usuarioId = :usuarioId")
+    fun obtenerFincasPorUsuario(usuarioId: Long): Flow<List<FincaEntity>>
+
+    // Busca si el usuario de Google ya está registrado
+    @Query("SELECT * FROM usuarios WHERE correo = :correo LIMIT 1")
+    suspend fun buscarUsuarioPorCorreo(correo: String): UsuarioEntity?
 }

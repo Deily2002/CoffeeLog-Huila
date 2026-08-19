@@ -16,36 +16,51 @@ data class UsuarioEntity(
     val fotoPerfil: String? = null
 )
 
-// 2. FINCAS (Ubicación y altitud)
-@Entity(tableName = "fincas")
+// 2. FINCAS (Ubicación, altitud y producción)
+@Entity(
+    tableName = "fincas",
+    foreignKeys = [ForeignKey(entity = UsuarioEntity::class, parentColumns = ["id"], childColumns = ["usuarioId"], onDelete = ForeignKey.CASCADE)]
+)
 data class FincaEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val usuarioId: Long,
+    @ColumnInfo(index = true) val usuarioId: Long,
     val nombre: String,
     val municipio: String,
     val departamento: String = "Huila",
-    val altitud: Int? = null
+    val altitud: Int? = null,
+    val produccionAnualEstimada: Float? = null
 )
 
-// 3. LOTES (Trazabilidad)
-@Entity(tableName = "lotes")
+// 3. LOTES (Trazabilidad y Agronomía)
+@Entity(
+    tableName = "lotes",
+    foreignKeys = [ForeignKey(entity = FincaEntity::class, parentColumns = ["id"], childColumns = ["fincaId"], onDelete = ForeignKey.CASCADE)]
+)
 data class LoteEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val fincaId: Long,
+    @ColumnInfo(index = true) val fincaId: Long,
     val numeroLote: String,
     val variedad: String,
     val proceso: ProcesoCafe,
     val fechaCosecha: Long,
     val pesoTotal: Float,
+    val edadArboles: Int? = null,
+    val factorRendimiento: Float? = null,
     val estado: EstadoLote = EstadoLote.ACTIVO
 )
 
 // 4. CATACIONES (SCA y Radar Chart)
-@Entity(tableName = "cataciones")
+@Entity(
+    tableName = "cataciones",
+    foreignKeys = [
+        ForeignKey(entity = LoteEntity::class, parentColumns = ["id"], childColumns = ["loteId"], onDelete = ForeignKey.CASCADE),
+        ForeignKey(entity = UsuarioEntity::class, parentColumns = ["id"], childColumns = ["usuarioId"], onDelete = ForeignKey.CASCADE)
+    ]
+)
 data class CatacionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val loteId: Long,
-    val usuarioId: Long,
+    @ColumnInfo(index = true) val loteId: Long,
+    @ColumnInfo(index = true) val usuarioId: Long,
     val fecha: Long = System.currentTimeMillis(),
     val fraganciaAroma: Float,
     val sabor: Float,
@@ -71,20 +86,29 @@ data class ClienteEntity(
 )
 
 // 6. VENTAS (Impacto financiero)
-@Entity(tableName = "ventas")
+@Entity(
+    tableName = "ventas",
+    foreignKeys = [
+        ForeignKey(entity = LoteEntity::class, parentColumns = ["id"], childColumns = ["loteId"], onDelete = ForeignKey.CASCADE),
+        ForeignKey(entity = ClienteEntity::class, parentColumns = ["id"], childColumns = ["clienteId"], onDelete = ForeignKey.CASCADE)
+    ]
+)
 data class VentaEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val loteId: Long,
-    val clienteId: Long,
+    @ColumnInfo(index = true) val loteId: Long,
+    @ColumnInfo(index = true) val clienteId: Long,
     val total: Double,
     val fecha: Long
 )
 
 // 7. FOTOS (Galería multimedia)
-@Entity(tableName = "fotos")
+@Entity(
+    tableName = "fotos",
+    foreignKeys = [ForeignKey(entity = LoteEntity::class, parentColumns = ["id"], childColumns = ["loteId"], onDelete = ForeignKey.CASCADE)]
+)
 data class FotoEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val loteId: Long,
+    @ColumnInfo(index = true) val loteId: Long,
     val ruta: String
 )
 
@@ -110,4 +134,3 @@ data class VariedadEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val nombre: String
 )
-

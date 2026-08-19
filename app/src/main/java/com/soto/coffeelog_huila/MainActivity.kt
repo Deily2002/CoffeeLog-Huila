@@ -20,6 +20,8 @@ import com.soto.coffeelog_huila.ui.auth.AuthViewModel
 import com.soto.coffeelog_huila.ui.auth.LoginScreen
 import com.soto.coffeelog_huila.ui.auth.RegisterScreen
 import com.soto.coffeelog_huila.ui.auth.RoleSelectionScreen
+import com.soto.coffeelog_huila.ui.onboarding.OnboardingScreen
+import com.soto.coffeelog_huila.ui.onboarding.SplashScreen
 import com.soto.coffeelog_huila.ui.theme.CoffeeLogHuilaTheme
 
 class MainActivity : ComponentActivity() {
@@ -53,22 +55,22 @@ class MainActivity : ComponentActivity() {
 fun CoffeeNavHost(authViewModel: AuthViewModel, sessionManager: SessionManager) {
     val navController = rememberNavController()
 
-    // Lógica de inicio: Si ya está logueado, va a su Home según el Rol
-    val startDestination = if (sessionManager.isLogged()) {
-        when (sessionManager.getRol()) {
-            "PRODUCTOR" -> Screens.HomeProductor.route
-            "CATADOR" -> Screens.HomeCatador.route
-            else -> Screens.HomeAdmin.route
-        }
-    } else {
-        Screens.Login.route
-    }
-
     NavHost(
         navController = navController,
-        startDestination = startDestination
+        startDestination = Screens.Splash.route
     ) {
-        // Pantalla de Login
+
+        // 1. Pantalla de Carga
+        composable(Screens.Splash.route) {
+            SplashScreen(navController = navController, sessionManager = sessionManager)
+        }
+
+        // 2. Carrusel de Bienvenida
+        composable(Screens.Onboarding.route) {
+            OnboardingScreen(navController = navController)
+        }
+
+        // 3. Pantalla de Login
         composable(Screens.Login.route) {
             LoginScreen(
                 viewModel = authViewModel,
@@ -76,7 +78,7 @@ fun CoffeeNavHost(authViewModel: AuthViewModel, sessionManager: SessionManager) 
             )
         }
 
-        // Pantalla de Registro
+        // 4. Pantalla de Registro
         composable(Screens.Register.route) {
             RegisterScreen(
                 viewModel = authViewModel,
@@ -85,7 +87,7 @@ fun CoffeeNavHost(authViewModel: AuthViewModel, sessionManager: SessionManager) 
             )
         }
 
-        // Pantalla de Selección de Rol
+        // 5. Pantalla de Selección de Rol
         composable(Screens.RoleSelection.route) {
             RoleSelectionScreen(
                 onRoleSelected = { rolSeleccionado ->
@@ -99,7 +101,7 @@ fun CoffeeNavHost(authViewModel: AuthViewModel, sessionManager: SessionManager) 
             )
         }
 
-        // Dashboards según Rol
+        // 6. Dashboards según Rol
         composable(Screens.HomeProductor.route) {
             Text(text = "Bienvenido Productor - Dashboard de Fincas")
         }
