@@ -45,7 +45,7 @@ fun RegisterScreen(viewModel: AuthViewModel, onNavigateToRole: () -> Unit, onNav
         imageUri = uri
     }
 
-    // 1. BOX PRINCIPAL: Actúa como el lienzo base, SIN imePadding para no trabar el teclado
+    // 1. BOX PRINCIPAL
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -94,7 +94,7 @@ fun RegisterScreen(viewModel: AuthViewModel, onNavigateToRole: () -> Unit, onNav
                             .clip(CircleShape)
                             .background(Color(0xFFE0E0E0))
                             .border(2.dp, Color.White, CircleShape)
-                            .clickable { galleryLauncher.launch("image/*") }, // Al tocar el círculo, abre galería
+                            .clickable { galleryLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
                         if (imageUri != null) {
@@ -115,7 +115,7 @@ fun RegisterScreen(viewModel: AuthViewModel, onNavigateToRole: () -> Unit, onNav
                             .clip(CircleShape)
                             .background(CoffeeDark)
                             .border(4.dp, Color(0xFFFDF8F5), CircleShape)
-                            .clickable { galleryLauncher.launch("image/*") }, // Al tocar el lápiz, abre galería
+                            .clickable { galleryLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(painterResource(id = R.drawable.ic_edit), contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
@@ -308,7 +308,7 @@ fun TermsDialog(onDismiss: () -> Unit) {
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("Entendido", color = CoffeeDark, fontWeight = FontWeight.Bold) }
         },
-        containerColor = Color(0xFFFDF8F5) // Fondo crema
+        containerColor = Color(0xFFFDF8F5)
     )
 }
 

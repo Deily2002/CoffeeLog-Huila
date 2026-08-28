@@ -10,62 +10,59 @@ class AuthViewModel(private val dao: CoffeeDao, private val session: SessionMana
 
     var loginStatus by mutableStateOf<RolUsuario?>(null)
     var errorMessage by mutableStateOf("")
-
-    fun login(correo: String, pass: String) {
-        viewModelScope.launch {
-            val user = dao.login(correo, pass)
-            if (user != null) {
-                session.saveUser(user.id, user.rol.name)
-                loginStatus = user.rol
-            } else {
-                errorMessage = "Datos incorrectos"
-            }
-        }
-    }
-
-    // Variables temporales para el registro
+    var userName by mutableStateOf(session.getNombre())
     var regNombre by mutableStateOf("")
     var regCorreo by mutableStateOf("")
     var regPassword by mutableStateOf("")
     var regTelefono by mutableStateOf("")
+    var navigateToRoleSelection by mutableStateOf(false)
 
-    // Función que se llamará cuando el usuario haga clic en su ROL
+    val totalLotes = dao.contarLotesPorUsuario(session.getUserId())
+    val totalCataciones = dao.contarCatacionesPorUsuario(session.getUserId())
+    val puntajePromedio = dao.promedioPuntajePorUsuario(session.getUserId())
+
+    fun login(correo: String, pass: String) {
+        viewModelScope.launch {
+            val user = dao.login(correo.trim(), pass.trim())
+            if (user != null) {
+                session.saveUser(user.id, user.rol.name, user.nombre)
+                userName = user.nombre
+                loginStatus = user.rol
+            } else {
+                errorMessage = "Correo o contraseña incorrectos"
+            }
+        }
+    }
+
     fun registrarConRol(rol: RolUsuario) {
         viewModelScope.launch {
             val user = UsuarioEntity(
-                nombre = regNombre,
-                correo = regCorreo,
-                password = regPassword,
+                nombre = regNombre.trim(),
+                correo = regCorreo.trim(),
+                password = regPassword.trim(),
                 telefono = regTelefono.ifEmpty { null },
                 rol = rol
             )
             val id = dao.registrarUsuario(user)
-            session.saveUser(id, rol.name)
+            session.saveUser(id, rol.name, regNombre.trim())
+            userName = regNombre
             loginStatus = rol
         }
     }
 
-    // Variable para avisarle a la pantalla que debe ir a Selección de Rol
-    var navigateToRoleSelection by mutableStateOf(false)
-
-    // Función que procesa el inicio de sesión con Google
     fun procesarGoogleLogin(correo: String, nombre: String) {
         viewModelScope.launch {
-            val user = dao.buscarUsuarioPorCorreo(correo)
+            val user = dao.buscarUsuarioPorCorreo(correo.trim())
             if (user != null) {
-                // Si el usuario ya existe en la Base de Datos, lo dejamos entrar a su Dashboard
-                session.saveUser(user.id, user.rol.name)
+                session.saveUser(user.id, user.rol.name, user.nombre)
+                userName = user.nombre
                 loginStatus = user.rol
             } else {
-                // Si es un usuario NUEVO, guardamos sus datos temporalmente
                 regNombre = nombre
-                regCorreo = correo
-                regPassword = "google_sso_password" // Contraseña interna por defecto
-
-                // Le avisamos a la pantalla de Login que lo mande a elegir su rol
+                regCorreo = correo.trim()
+                regPassword = "google_sso_password"
                 navigateToRoleSelection = true
             }
         }
     }
 }
-

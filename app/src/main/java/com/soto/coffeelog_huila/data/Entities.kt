@@ -31,25 +31,30 @@ data class FincaEntity(
     val produccionAnualEstimada: Float? = null
 )
 
-// 3. LOTES (Trazabilidad y Agronomía)
+// 3. LOTES
 @Entity(
     tableName = "lotes",
     foreignKeys = [ForeignKey(entity = FincaEntity::class, parentColumns = ["id"], childColumns = ["fincaId"], onDelete = ForeignKey.CASCADE)]
 )
 data class LoteEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    @ColumnInfo(index = true) val fincaId: Long,
+    val fincaId: Long,
     val numeroLote: String,
     val variedad: String,
     val proceso: ProcesoCafe,
     val fechaCosecha: Long,
-    val pesoTotal: Float,
+    val altitud: Int? = null,
     val edadArboles: Int? = null,
+    val produccionAnual: Float? = null,
     val factorRendimiento: Float? = null,
+    val humedad: Float? = null,
+    val pesoTotal: Float,
+    val notasAdicionales: String? = null,
+    val imagenUri: String? = null,
+    val fechaRegistro: Long = System.currentTimeMillis(),
     val estado: EstadoLote = EstadoLote.ACTIVO
 )
 
-// 4. CATACIONES (SCA y Radar Chart)
 @Entity(
     tableName = "cataciones",
     foreignKeys = [
@@ -61,7 +66,13 @@ data class CatacionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(index = true) val loteId: Long,
     @ColumnInfo(index = true) val usuarioId: Long,
-    val fecha: Long = System.currentTimeMillis(),
+
+    // CAMPOS NUEVOS PARA EL FORMULARIO
+    val fechaCatacion: String,
+    val nivelTueste: String,
+    val calidadSugerida: CalidadSCA,
+
+    // Parámetros SCA
     val fraganciaAroma: Float,
     val sabor: Float,
     val saborResidual: Float,
@@ -72,8 +83,9 @@ data class CatacionEntity(
     val tazaLimpia: Float,
     val dulzor: Float,
     val puntajeCatador: Float,
+
     val puntajeTotal: Float,
-    val notas: String?
+    val notasCatador: String?
 )
 
 // 5. CLIENTES (CRM básico)
@@ -101,7 +113,7 @@ data class VentaEntity(
     val fecha: Long
 )
 
-// 7. FOTOS (Galería multimedia)
+// 7. FOTOS
 @Entity(
     tableName = "fotos",
     foreignKeys = [ForeignKey(entity = LoteEntity::class, parentColumns = ["id"], childColumns = ["loteId"], onDelete = ForeignKey.CASCADE)]
@@ -112,7 +124,7 @@ data class FotoEntity(
     val ruta: String
 )
 
-// 8. LOGS DE SINCRONIZACIÓN (Control Offline)
+// 8. LOGS DE SINCRONIZACIÓN
 @Entity(tableName = "sync_logs")
 data class SyncLogEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
@@ -120,7 +132,7 @@ data class SyncLogEntity(
     val estado: EstadoSync
 )
 
-// 9. CONFIGURACIÓN (Ajustes de la app)
+// 9. CONFIGURACIÓN
 @Entity(tableName = "config")
 data class ConfigEntity(
     @PrimaryKey val id: Int = 1,
@@ -128,7 +140,7 @@ data class ConfigEntity(
     val moneda: String = "COP"
 )
 
-// 10. VARIEDADES (Maestro de datos)
+// 10. VARIEDADES
 @Entity(tableName = "variedades")
 data class VariedadEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,

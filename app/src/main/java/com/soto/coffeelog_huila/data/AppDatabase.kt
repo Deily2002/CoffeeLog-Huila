@@ -9,7 +9,7 @@ import androidx.room.*
         CatacionEntity::class, ClienteEntity::class, VentaEntity::class,
         FotoEntity::class, SyncLogEntity::class, ConfigEntity::class, VariedadEntity::class
     ],
-    version = 1,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -27,7 +27,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "coffeelog_db"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

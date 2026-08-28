@@ -20,44 +20,49 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.soto.coffeelog_huila.R
+import com.soto.coffeelog_huila.data.RolUsuario
 import com.soto.coffeelog_huila.ui.theme.CoffeeDark
-import androidx.compose.ui.draw.shadow
 import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(viewModel: AuthViewModel, onNavigateToRegister: () -> Unit) {
+fun LoginScreen(
+    viewModel: AuthViewModel,
+    onNavigateToRegister: () -> Unit,
+    onLoginSuccess: (RolUsuario) -> Unit
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
     val scrollState = rememberScrollState()
     val context = androidx.compose.ui.platform.LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    // Este efecto está "escuchando". Si el ViewModel dice que es un usuario nuevo de Google, cambia de pantalla.
-    LaunchedEffect(viewModel.navigateToRoleSelection) {
-        if (viewModel.navigateToRoleSelection) {
-            onNavigateToRegister() // Reutilizamos la navegación para ir al flujo de registro/rol
-            viewModel.navigateToRoleSelection = false // Apagamos el aviso
+    // Escucha si el login manual o de Google fue exitoso
+    LaunchedEffect(viewModel.loginStatus) {
+        viewModel.loginStatus?.let { rol ->
+            onLoginSuccess(rol)
+            viewModel.loginStatus = null
         }
     }
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(Color(0xFFFDF8F5))
-    ) {
+    // Escucha si es un usuario nuevo de Google para ir al registro de rol
+    LaunchedEffect(viewModel.navigateToRoleSelection) {
+        if (viewModel.navigateToRoleSelection) {
+            onNavigateToRegister()
+            viewModel.navigateToRoleSelection = false
+        }
+    }
 
-        // DECORACIÓN FONDO
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFFDF8F5))) {
+
         Image(
             painter = painterResource(id = R.drawable.decoracion_cafe),
             contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .height(220.dp),
+            modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter).height(220.dp),
             contentScale = ContentScale.Crop
         )
 
-        // 2. Maneja los espacios del teclado y el sistema
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -82,7 +87,6 @@ fun LoginScreen(viewModel: AuthViewModel, onNavigateToRegister: () -> Unit) {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // CONFIGURACIÓN DE COLORES PARA LOS CAMPOS
             val fieldColors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = Color.White,
                 focusedContainerColor = Color.White,
@@ -90,7 +94,6 @@ fun LoginScreen(viewModel: AuthViewModel, onNavigateToRegister: () -> Unit) {
                 focusedBorderColor = CoffeeDark
             )
 
-            // CAMPO CORREO
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -104,7 +107,6 @@ fun LoginScreen(viewModel: AuthViewModel, onNavigateToRegister: () -> Unit) {
 
             Spacer(modifier = Modifier.height(5.dp))
 
-            // CAMPO CONTRASEÑA
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -123,7 +125,7 @@ fun LoginScreen(viewModel: AuthViewModel, onNavigateToRegister: () -> Unit) {
                 singleLine = true
             )
 
-            TextButton(onClick = { /* Lógica de recuperación */ }, modifier = Modifier.align(Alignment.End)) {
+            TextButton(onClick = { /* Recuperación */ }, modifier = Modifier.align(Alignment.End)) {
                 Text("¿Olvidaste tu contraseña?", color = CoffeeDark, fontSize = 12.sp)
             }
 
@@ -138,39 +140,25 @@ fun LoginScreen(viewModel: AuthViewModel, onNavigateToRegister: () -> Unit) {
                 Text("Iniciar sesión", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
 
+            if (viewModel.errorMessage.isNotEmpty()) {
+                Text(text = viewModel.errorMessage, color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = Color.LightGray,
-                    thickness = 1.dp
-                )
-                Text(
-                    text = "o continúa con",
-                    color = Color.Gray,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-                HorizontalDivider(
-                    modifier = Modifier.weight(1f),
-                    color = Color.LightGray,
-                    thickness = 1.dp
-                )
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray, thickness = 1.dp)
+                Text(text = "o continúa con", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 16.dp))
+                HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray, thickness = 1.dp)
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // BOTÓN GOOGLE
             OutlinedButton(
                 onClick = {
                     coroutineScope.launch {
                         try {
                             val credentialManager = androidx.credentials.CredentialManager.create(context)
-
                             val googleIdOption = com.google.android.libraries.identity.googleid.GetGoogleIdOption.Builder()
                                 .setFilterByAuthorizedAccounts(false)
                                 .setServerClientId("1023874576900-eaaf9f159hfq0j01pnbno954mq92sqrk.apps.googleusercontent.com")
@@ -185,16 +173,11 @@ fun LoginScreen(viewModel: AuthViewModel, onNavigateToRegister: () -> Unit) {
 
                             if (credential is androidx.credentials.CustomCredential &&
                                 credential.type == com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-
                                 val googleIdTokenCredential = com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.createFrom(credential.data)
-
-                                val email = googleIdTokenCredential.id
-                                val name = googleIdTokenCredential.displayName ?: "Usuario Google"
-
-                                viewModel.procesarGoogleLogin(email, name)
+                                viewModel.procesarGoogleLogin(googleIdTokenCredential.id, googleIdTokenCredential.displayName ?: "Google User")
                             }
                         } catch (e: Exception) {
-                            viewModel.errorMessage = "Error al conectar con Google. Verifica tu conexión."
+                            viewModel.errorMessage = "Error al conectar con Google."
                         }
                     }
                 },
